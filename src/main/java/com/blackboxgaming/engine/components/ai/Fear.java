@@ -1,0 +1,16 @@
+package com.blackboxgaming.engine.components.ai;
+
+import com.blackboxgaming.engine.components.IComponent;
+import com.blackboxgaming.engine.Entity;
+
+public class Fear implements IComponent {
+
+    public Entity target;
+    public float distance;
+
+    public Fear(Entity target, float distance) {
+        this.target = target;
+        this.distance = distance;
+    }
+
+}
