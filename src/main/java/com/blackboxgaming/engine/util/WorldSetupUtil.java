@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.profiling.GLProfiler;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
@@ -271,11 +272,30 @@ public class WorldSetupUtil {
         Engine.entityManager.add(hudItem);
     }
 
+    public static void addHUDItemsForProfiling() {
+        Entity hudItem;
+        hudItem = new Entity();
+        hudItem.add(new HUDItem("GL-calls", "", "", true));
+        Engine.entityManager.add(hudItem);
+        hudItem = new Entity();
+        hudItem.add(new HUDItem("Draw-calls", "", "", true));
+        Engine.entityManager.add(hudItem);
+        hudItem = new Entity();
+        hudItem.add(new HUDItem("Shader-switches", "", "", true));
+        Engine.entityManager.add(hudItem);
+        hudItem = new Entity();
+        hudItem.add(new HUDItem("Texture-bindings", "", "", true));
+        Engine.entityManager.add(hudItem);
+        hudItem = new Entity();
+        hudItem.add(new HUDItem("Vertices", "", "", true));
+        Engine.entityManager.add(hudItem);
+    }
+
     public static void simualteKeyPressForDebug() {
         InputProcessor input = Gdx.input.getInputProcessor();
 //        input.keyDown(Keys.F1);
 //        input.keyDown(Keys.F4); // rotation arrow
-        input.keyDown(Keys.F5); // shadow
+//        input.keyDown(Keys.F5); // shadow
 //        input.keyDown(Keys.F6); // physics
 //        input.keyDown(Keys.F8);
 //        input.keyDown(Keys.C);
@@ -297,6 +317,12 @@ public class WorldSetupUtil {
         Entity controlEntity = new Entity();
         controlEntity.add(LayerFactory.createJoystickControlLayer());
         Engine.systemManager.get(LayerRendererSystem.class).add(controlEntity);
+    }
+    
+    public static void addTopLayer() {
+        Entity top = new Entity();
+        top.add(LayerFactory.createLevelAndHealthLayer());
+        Engine.systemManager.get(LayerRendererSystem.class).add(top);
     }
 
     public static void addBossEnemies(float area, int n) {
@@ -433,7 +459,7 @@ public class WorldSetupUtil {
 
     public static Entity createBall(Vector3 position) {
         if (ballModel == null) {
-            ballModel = ModelFactory.getSphereModel(Global.tennisBallDiameter, 25);
+            ballModel = ModelFactory.getSphereModel(Global.tennisBallDiameter, 10);
         }
         Entity ball = new Entity();
         ball.add(new Transform(position.x, position.y, position.z));
@@ -454,9 +480,8 @@ public class WorldSetupUtil {
         ballPhysics.body.setRestitution(0.712f);
         ballPhysics.body.setFriction(0.8f);
         ballPhysics.body.setRollingFriction(0.25f);
-        ballPhysics.body.setRollingFriction(0.25f);
-        ballPhysics.body.setCcdMotionThreshold(0.5f);
-        ballPhysics.body.setCcdSweptSphereRadius(0.1f);
+        ballPhysics.body.setCcdMotionThreshold(0.25f);
+        ballPhysics.body.setCcdSweptSphereRadius(0.05f);
         return ballPhysics;
     }
 
@@ -472,25 +497,46 @@ public class WorldSetupUtil {
         return obstacle;
     }
 
-    public static List<Entity> createWall(float width, float x, float levels) {
+    public static List<Entity> createWall(float width, float x, float levels, int klevels) {
         List<Entity> bricks = new ArrayList();
-        float brickWidth = 2.0f;
+        float brickWidth = 1.0f;
         float brickHeight = 0.5f;
-        float brickDepth = 1.0f;
-        for (int i = 0; i < levels; i++) {
-            for (int j = 0; j < width / brickWidth; j++) {
-                if (i % 2 == 0) {
-                    bricks.add(createBrick(brickWidth, brickHeight, brickDepth, x, i * brickHeight + brickHeight / 2f, brickWidth / 4f + -width / 2f + j * brickWidth));
-                } else {
-                    if (j == 0) {
-                        continue;
+        float brickDepth = 0.5f;
+        for (int k = 0; k < klevels; k++) {
+            for (int i = 0; i < levels; i++) {
+                for (int j = 0; j < width / brickWidth; j++) {
+                    if (i % 2 == 0) {
+                        bricks.add(createBrick(brickWidth, brickHeight, brickDepth, x + brickDepth * k, i * brickHeight + brickHeight / 2f, brickWidth / 4f + -width / 2f + j * brickWidth));
+                    } else {
+                        if (j == 0) {
+                            continue;
+                        }
+                        bricks.add(createBrick(brickWidth, brickHeight, brickDepth, x + brickDepth * k, i * brickHeight + brickHeight / 2f, -brickWidth / 4f + -width / 2f + j * brickWidth));
                     }
-                    bricks.add(createBrick(brickWidth, brickHeight, brickDepth, x, i * brickHeight + brickHeight / 2f, -brickWidth / 4f + -width / 2f + j * brickWidth));
                 }
             }
         }
 
         return bricks;
+    }
+
+    public static Entity createBrick(com.badlogic.gdx.graphics.g3d.Model model, float width, float height, float depth, float x, float y, float z) {
+//        float brickWeight = 18.14f; // real-life
+        float brickWeight = 5;
+        int active = Collision.ACTIVE_TAG;
+//        int active = Collision.DISABLE_DEACTIVATION;
+        Entity brick = new Entity();
+        brick.add(new Transform(x, y, z));
+        brick.add(new Model(model, Randomizer.getRandomColor(), true));
+        brick.add(new Health(2));
+//        brick.add(new Shadow());
+        brick.add(new Physics(CollisionShapeFactory.getBoxShape(depth, height, width), brickWeight, CollisionFlags.CF_CUSTOM_MATERIAL_CALLBACK, Constants.OBSTACLE_FLAG, (short) 0, active));
+        brick.get(Physics.class).body.setRestitution(0.55f);
+//        brick.get(Physics.class).body.setRollingFriction(0.8f);
+//        brick.get(Physics.class).body.setFriction(0.8f);
+        Engine.entityManager.add(brick);
+
+        return brick;
     }
 
     private static com.badlogic.gdx.graphics.g3d.Model brickModel;
@@ -515,6 +561,45 @@ public class WorldSetupUtil {
         Engine.entityManager.add(brick);
 
         return brick;
+    }
+
+    private static com.badlogic.gdx.graphics.g3d.Model brickModelWide;
+    private static com.badlogic.gdx.graphics.g3d.Model brickModelLong;
+
+    public static List<Entity> createWallAroundPoint(float wide, int levels, float x, float y, float z) {
+        List<Entity> bricks = new ArrayList();
+        float brickWidth = 1.0f;
+        float brickHeight = 0.5f;
+        float brickDepth = 0.5f;
+
+        if (brickModelWide == null) {
+            brickModelWide = ModelFactory.getBoxModel(brickDepth, brickHeight, brickWidth);
+        }
+        if (brickModelLong == null) {
+            brickModelLong = ModelFactory.getBoxModel(brickWidth, brickHeight, brickDepth);
+        }
+
+        float offest = -(((wide * brickWidth + brickDepth) / 2f) - brickDepth / 2f);
+        System.out.println(offest);
+
+        for (int i = 0; i < levels; i++) {
+            for (float j = 0; j < wide; j++) {
+                if (i % 2 == 0) {
+                    bricks.add(createBrick(brickModelWide, brickWidth, brickHeight, brickDepth, x + offest, y + brickHeight / 2f + brickHeight * i, z + offest + brickWidth / 2f - brickDepth / 2f + brickWidth * j));
+                    bricks.add(createBrick(brickModelWide, brickWidth, brickHeight, brickDepth, x + -offest, y + brickHeight / 2f + brickHeight * i, z + offest + brickWidth / 2f + brickDepth / 2f + brickWidth * j));
+
+                    bricks.add(createBrick(brickModelLong, brickDepth, brickHeight, brickWidth, x + offest + brickWidth / 2f + brickDepth / 2f + brickWidth * j, y + brickHeight / 2f + brickHeight * i, z + offest));
+                    bricks.add(createBrick(brickModelLong, brickDepth, brickHeight, brickWidth, x + offest + brickWidth / 2f - brickDepth / 2f + brickWidth * j, y + brickHeight / 2f + brickHeight * i, z + -offest));
+                }else{
+                    bricks.add(createBrick(brickModelWide, brickWidth, brickHeight, brickDepth, x + offest, y + brickHeight / 2f + brickHeight * i, z + offest + brickWidth / 2f - brickDepth / 2f + brickWidth * j + brickDepth));
+                    bricks.add(createBrick(brickModelWide, brickWidth, brickHeight, brickDepth, x + -offest, y + brickHeight / 2f + brickHeight * i, z + offest + brickWidth / 2f + brickDepth / 2f + brickWidth * j - brickDepth));
+
+                    bricks.add(createBrick(brickModelLong, brickDepth, brickHeight, brickWidth, x + offest + brickWidth / 2f + brickDepth / 2f + brickWidth * j - brickDepth, y + brickHeight / 2f + brickHeight * i, z + offest));
+                    bricks.add(createBrick(brickModelLong, brickDepth, brickHeight, brickWidth, x + offest + brickWidth / 2f - brickDepth / 2f + brickWidth * j + brickDepth, y + brickHeight / 2f + brickHeight * i, z + -offest));
+                }
+            }
+        }
+        return bricks;
     }
 
 }

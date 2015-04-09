@@ -1,12 +1,15 @@
 package com.blackboxgaming.engine;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.Screen;
 import com.blackboxgaming.engine.util.Global;
 import java.util.Map;
 
 public class Engine {
 
+    public static Preferences preferences = Gdx.app.getPreferences("SuburBallUserData");
     public static Game game;
     public static Map<String, Screen> screens;
     public static final EntityManager entityManager = new EntityManager();

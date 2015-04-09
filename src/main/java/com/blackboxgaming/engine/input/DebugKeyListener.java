@@ -13,6 +13,7 @@ import com.blackboxgaming.engine.components.Health;
 import com.blackboxgaming.engine.components.Model;
 import com.blackboxgaming.engine.components.Transform;
 import com.blackboxgaming.engine.factories.ModelFactory;
+import com.blackboxgaming.engine.systems.LevelProgressionSystem;
 import com.blackboxgaming.engine.util.Global;
 import com.blackboxgaming.engine.util.WorldSetupUtil;
 import java.util.ArrayList;
@@ -20,14 +21,14 @@ import java.util.List;
 import java.util.ListIterator;
 
 public class DebugKeyListener implements InputProcessor {
-
+    
     private Entity grid;
     private Entity mouse;
     private boolean debugMouse = false;
     private final Vector3 x0zPoint = new Vector3();
     private final Plane x0zPlane = new Plane(new Vector3(0, 1, 0), new Vector3(0, 0, 0));
     private final Ray ray = new Ray(Vector3.Zero, Vector3.Zero);
-
+    
     @Override
     public boolean keyDown(int i) {
         switch (i) {
@@ -102,35 +103,42 @@ public class DebugKeyListener implements InputProcessor {
             case Keys.V:
                 cycleCamera();
                 break;
+            case Keys.L:
+                if (Engine.systemManager.has(LevelProgressionSystem.class)) {
+                    for (Entity entity : Engine.systemManager.get(LevelProgressionSystem.class).entities) {
+                        Engine.garbageManager.markForDeletion(entity);
+                    }
+                }
+                break;
         }
         return false;
     }
-
+    
     @Override
     public boolean keyUp(int i) {
         return false;
     }
-
+    
     @Override
     public boolean keyTyped(char c) {
         return false;
     }
-
+    
     @Override
     public boolean touchDown(int i, int i1, int i2, int button) {
         return false;
     }
-
+    
     @Override
     public boolean touchUp(int i, int i1, int i2, int button) {
         return false;
     }
-
+    
     @Override
     public boolean touchDragged(int i, int i1, int i2) {
         return false;
     }
-
+    
     @Override
     public boolean mouseMoved(int i, int j) {
         if (debugMouse && mouse != null) {
@@ -141,15 +149,15 @@ public class DebugKeyListener implements InputProcessor {
         }
         return false;
     }
-
+    
     @Override
     public boolean scrolled(int i) {
         return false;
     }
-
+    
     private List<Vector3> cameraPositions;
     private ListIterator<Vector3> cameraPositionsIterator;
-
+    
     private void cycleCamera() {
         if (cameraPositions == null) {
             cameraPositions = new ArrayList();
@@ -158,14 +166,14 @@ public class DebugKeyListener implements InputProcessor {
             cameraPositions.add(Global.getCamera().position.cpy());
             cameraPositionsIterator = cameraPositions.listIterator();
         }
-        if(!cameraPositionsIterator.hasNext()){
+        if (!cameraPositionsIterator.hasNext()) {
             cameraPositionsIterator = cameraPositions.listIterator();
         }
-
+        
         Global.getCamera().position.set(cameraPositionsIterator.next());
         Global.getCamera().lookAt(0, 0, 0);
         Global.getCamera().up.set(Vector3.Y);
         Global.getCamera().update();
     }
-
+    
 }

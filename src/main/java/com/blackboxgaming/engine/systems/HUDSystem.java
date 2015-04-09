@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.profiling.GLProfiler;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -23,13 +24,19 @@ import java.util.List;
 public class HUDSystem implements ISystem, Disposable {
 
     private final List<Entity> entities = new ArrayList();
-    private final Stage stage = new Stage();
-    private final Table table = new Table().padLeft(10).padBottom(10);
-    private final BitmapFont font = new BitmapFont();
+    private final Stage stage;
+    private final Table table;
+    private final BitmapFont font;
     private final Color fontColor = Color.RED;
     private final StringBuilder stringBuilder = new StringBuilder();
     private HUDItem hudItem;
     private Label label;
+
+    public HUDSystem() {
+        this.font = new BitmapFont();
+        this.table = new Table().padLeft(10).padBottom(10);
+        this.stage = new Stage();
+    }
 
     @Override
     public void add(Entity e) {
@@ -65,7 +72,7 @@ public class HUDSystem implements ISystem, Disposable {
         stage.addActor(table);
         stage.draw();
     }
-
+    
     private void updateValues(Entity entity, HUDItem item) {
         String value = item.value;
         switch (item.name.toLowerCase()) {
@@ -103,6 +110,21 @@ public class HUDSystem implements ISystem, Disposable {
                 break;
             case "isflying":
                 value = "" + entity.get(Puppet.class).isFlying;
+                break;
+            case "gl-calls":
+                value = "" + GLProfiler.calls;
+                break;
+            case "draw-calls":
+                value = "" + GLProfiler.drawCalls;
+                break;
+            case "shader-switches":
+                value = "" + GLProfiler.shaderSwitches;
+                break;
+            case "texture-bindings":
+                value = "" + GLProfiler.textureBindings;
+                break;
+            case "vertices":
+                value = "" + GLProfiler.vertexCount.total;
                 break;
         }
         item.value = value;

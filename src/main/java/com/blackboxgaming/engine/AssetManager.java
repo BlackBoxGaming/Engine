@@ -40,6 +40,9 @@ public class AssetManager implements Disposable {
 //        assetList.add(pathToModels + "Box.g3db");
         assetList.add(pathToBoxes + "box.g3db");
         assetList.add(pathToBoxes + "box2.g3db");
+        assetList.add(pathToBoxes + "box2physics.g3db");
+        assetList.add(pathToBoxes + "box2min.g3db");
+        assetList.add(pathToBoxes + "box2minhole.g3db");
 
         System.out.println(this.getClass() + " loading " + assetList.size() + " models");
         long start = System.currentTimeMillis();
@@ -78,7 +81,7 @@ public class AssetManager implements Disposable {
     public com.badlogic.gdx.graphics.g3d.Model getTreeModel(String modelName) {
         return assetManager.get(pathToTrees + modelName + ".g3db", com.badlogic.gdx.graphics.g3d.Model.class);
     }
-    
+
     public com.badlogic.gdx.graphics.g3d.Model getMonsterModel(String modelName) {
         return assetManager.get(pathToMonsters + modelName + ".g3db", com.badlogic.gdx.graphics.g3d.Model.class);
     }
@@ -91,7 +94,11 @@ public class AssetManager implements Disposable {
     @Override
     public void dispose() {
         System.out.println("Disposing " + this.getClass());
-        assetManager.dispose();
+        try {
+            assetManager.dispose();
+        } catch (IllegalArgumentException ex) {
+            System.out.println("very illegal argument, much error");
+        }
         assetList.clear();
     }
 

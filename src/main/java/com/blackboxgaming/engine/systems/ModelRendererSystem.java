@@ -8,9 +8,12 @@ import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.graphics.g3d.RenderableProvider;
+import com.badlogic.gdx.graphics.g3d.Shader;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
 import com.badlogic.gdx.graphics.g3d.utils.DepthShaderProvider;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
+import com.badlogic.gdx.graphics.profiling.GLProfiler;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.BoundingBox;
@@ -22,6 +25,7 @@ import com.blackboxgaming.engine.components.Transform;
 import com.blackboxgaming.engine.Engine;
 import com.blackboxgaming.engine.Entity;
 import com.blackboxgaming.engine.components.Health;
+import com.blackboxgaming.engine.components.Radius;
 import com.blackboxgaming.engine.components.Shadow;
 import com.blackboxgaming.engine.factories.ModelFactory;
 import com.blackboxgaming.engine.util.Global;
@@ -34,8 +38,9 @@ public class ModelRendererSystem implements ISystem, Disposable {
     private final List<RenderableProvider> renderables = new ArrayList();
     private final List<RenderableProvider> shadows = new ArrayList();
     private final List<com.badlogic.gdx.graphics.g3d.Model> toBeDisposedModels = new ArrayList();
+
     public static final ModelBatch modelBatch = new ModelBatch();
-    private final ModelBatch shadowBatch = new ModelBatch(new DepthShaderProvider());
+    private ModelBatch shadowBatch;
     private final ModelBuilder modelBuilder = new ModelBuilder();
     private final BoundingBox bounds = new BoundingBox();
     private final Vector3 center = new Vector3();
@@ -54,8 +59,8 @@ public class ModelRendererSystem implements ISystem, Disposable {
     public void add(Entity entity) {
         if (!entities.contains(entity)) {
             entities.add(entity);
-            if(entity.has(Health.class)){
-                if(Engine.systemManager.has(HealthBarRendererSystem.class)){
+            if (entity.has(Health.class)) {
+                if (Engine.systemManager.has(HealthBarRendererSystem.class)) {
                     Engine.systemManager.get(HealthBarRendererSystem.class).add(entity);
                 }
             }
@@ -77,14 +82,19 @@ public class ModelRendererSystem implements ISystem, Disposable {
             castShadow = (Global.SHADOW && entity.has(Shadow.class));
 
             if (Global.FRUSTRUM_CULLING) {
-                modelInstance.calculateBoundingBox(bounds);
-                center.set(bounds.getCenter(Vector3.Zero));
-                dimensions.set(bounds.getDimensions(Vector3.Zero));
-                radius = dimensions.len() / 2f;
+                if (!entity.has(Radius.class)) {
+                    modelInstance.calculateBoundingBox(bounds);
+                    center.set(bounds.getCenter(Vector3.Zero));
+                    dimensions.set(bounds.getDimensions(Vector3.Zero));
+                    radius = dimensions.len() / 2f;
+                    entity.add(new Radius(radius));
+                } else {
+                    radius = entity.get(Radius.class).radius;
+                }
 
                 if (Global.getCamera().frustum.sphereInFrustum(transform.getTranslation(Vector3.Zero), radius)) {
                     renderables.add(modelInstance);
-                    if (castShadow) {
+                    if (Global.SHADOW && castShadow) {
                         shadows.add(modelInstance);
                     }
 
@@ -98,7 +108,7 @@ public class ModelRendererSystem implements ISystem, Disposable {
                 }
             } else {
                 renderables.add(modelInstance);
-                if (castShadow) {
+                if (Global.SHADOW && castShadow) {
                     shadows.add(modelInstance);
                 }
             }
@@ -119,7 +129,6 @@ public class ModelRendererSystem implements ISystem, Disposable {
 
     private void clear() {
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-//        Gdx.gl.glClearColor(0.141f, 0.376f, 0.408f, 1.f);
         Gdx.gl.glClearColor(0.055f, 0.275f, 0.306f, 1.f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
         Global.VISIBLE_OBJECT_COUNT = 0;
@@ -139,12 +148,17 @@ public class ModelRendererSystem implements ISystem, Disposable {
     }
 
     private void renderShadows() {
-        Global.getShadowLight().begin(Vector3.Zero, Global.getCamera().direction);
-        shadowBatch.begin(Global.getShadowLight().getCamera());
-        shadowBatch.render(shadows);
-        shadowBatch.end();
-        Global.getShadowLight().end();
-        Gdx.gl.glClearColor(0, 0, 0, 1.f);
+        if (Global.SHADOW) {
+            if (shadowBatch == null) {
+                shadowBatch = new ModelBatch(new DepthShaderProvider());
+            }
+            Global.getShadowLight().begin(Vector3.Zero, Global.getCamera().direction);
+            shadowBatch.begin(Global.getShadowLight().getCamera());
+            shadowBatch.render(shadows);
+            shadowBatch.end();
+            Global.getShadowLight().end();
+            Gdx.gl.glClearColor(0, 0, 0, 1.f);
+        }
     }
 
     private void debugPhysics() {
@@ -158,12 +172,12 @@ public class ModelRendererSystem implements ISystem, Disposable {
             Global.getDynamicsWorld().debugDrawWorld();
             debugDrawer.end();
         }
-        
+
         if (Global.DEBUG_PHYSICS && Engine.systemManager.has(PhysicsSystem2D.class)) {
             if (debugDrawer2D == null) {
                 debugDrawer2D = new Box2DDebugRenderer(true, true, true, true, true, true);
             }
-            
+
             debugDrawer2D.render(Global.getDynamicsWorld2D(), Global.getCamera().combined.cpy().rotate(Vector3.X, 90));
         }
     }
@@ -178,7 +192,9 @@ public class ModelRendererSystem implements ISystem, Disposable {
         renderables.clear();
         shadows.clear();
         modelBatch.dispose();
-        shadowBatch.dispose();
+        if (shadowBatch != null) {
+            shadowBatch.dispose();
+        }
         if (debugDrawer != null) {
             debugDrawer.dispose();
         }

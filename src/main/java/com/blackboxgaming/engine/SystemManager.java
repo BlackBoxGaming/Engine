@@ -1,7 +1,9 @@
 package com.blackboxgaming.engine;
 
+import com.badlogic.gdx.graphics.profiling.GLProfiler;
 import com.badlogic.gdx.utils.Disposable;
 import com.blackboxgaming.engine.systems.ISystem;
+import com.blackboxgaming.engine.util.Global;
 import java.util.LinkedHashMap;
 import java.util.Map;
 

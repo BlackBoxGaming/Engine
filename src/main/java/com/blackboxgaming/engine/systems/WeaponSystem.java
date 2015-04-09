@@ -60,9 +60,10 @@ public class WeaponSystem implements ISystem, Disposable {
     private Matrix4 nozzleRelativeToWeapon;
     private Matrix4 shotOriginAbsolute;
     private boolean firing;
-    private final MeleeCalback2D meleeCallback2D = new MeleeCalback2D();
+    private final MeleeCalback2D meleeCallback2D;
 
     public WeaponSystem() {
+        this.meleeCallback2D = new MeleeCalback2D();
         if (Engine.systemManager.has(PhysicsSystem.class)) {
             callback = new ClosestRayResultCallback(from, to);
         }

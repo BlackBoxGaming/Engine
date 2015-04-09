@@ -27,8 +27,8 @@ public class HealthBarRendererSystem implements ISystem, Disposable {
 
     private final List<Entity> entities = new ArrayList();
     private Health health;
-    private final ShapeRenderer shapeRenderer = new ShapeRenderer();
-    private final ModelBuilder modelBuilder = new ModelBuilder();
+    private final ShapeRenderer shapeRenderer;
+    private final ModelBuilder modelBuilder;
     private final float width = 2f;
     private final float height = 0.25f;
     private final float depth = 0;
@@ -50,6 +50,11 @@ public class HealthBarRendererSystem implements ISystem, Disposable {
     private Vector3 healthPlate01;
     private Vector3 healthPlateNormal;
 
+    public HealthBarRendererSystem() {
+        this.modelBuilder = new ModelBuilder();
+        this.shapeRenderer = new ShapeRenderer();
+    }
+
     @Override
     public void add(Entity entity) {
         if (!entities.contains(entity)) {
@@ -67,7 +72,7 @@ public class HealthBarRendererSystem implements ISystem, Disposable {
         for (Entity entity : entities) {
             health = entity.get(Health.class);
 
-            if (health.currentHealth == health.maxHealth) {
+            if (Global.hideMaxHealth && health.currentHealth == health.maxHealth) {
                 continue;
             }
 

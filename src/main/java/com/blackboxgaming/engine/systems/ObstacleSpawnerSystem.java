@@ -1,5 +1,6 @@
 package com.blackboxgaming.engine.systems;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Disposable;
 import com.blackboxgaming.engine.Entity;
 import com.blackboxgaming.engine.util.Global;
@@ -10,6 +11,7 @@ import java.util.List;
 public class ObstacleSpawnerSystem implements ISystem, Disposable {
 
     private final List<Entity> entities = new ArrayList();
+    private final List<Entity> bricks = new ArrayList();
     public int maxObstacles;
 
     public ObstacleSpawnerSystem(int maxObstacles) {
@@ -31,10 +33,16 @@ public class ObstacleSpawnerSystem implements ISystem, Disposable {
     @Override
     public void update(float delta) {
         while (entities.size() < maxObstacles) {
-            List<Entity> bricks = WorldSetupUtil.createWall(Global.boxWidth - Global.boxWidth / 6f, Global.boxLength / 3f, 8);
+            if (MathUtils.randomBoolean()) {
+                bricks.addAll(WorldSetupUtil.createWall(Global.boxWidth - Global.boxWidth / 6f, Global.boxLength / 4f, 8, 1));
+            } else {
+                bricks.addAll(WorldSetupUtil.createWallAroundPoint(2, 6, Global.boxLength / 4f, 0, 0));
+                bricks.addAll(WorldSetupUtil.createWallAroundPoint(4, 4, Global.boxLength / 4f, 0, 0));
+            }
             for (Entity brick : bricks) {
                 entities.add(brick);
             }
+            bricks.clear();
         }
     }
 

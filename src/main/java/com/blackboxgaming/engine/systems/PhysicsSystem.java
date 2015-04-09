@@ -80,6 +80,7 @@ public class PhysicsSystem implements ISystem, Disposable {
         Global.performanceCounter.tick();
         Global.performanceCounter.start();
         Global.getDynamicsWorld().stepSimulation(Global.getDeltaInSeconds(), 5, 1f / 60f);
+//        Global.getDynamicsWorld().stepSimulation(Global.getDeltaInSeconds(), 2, 1f / 40f);
 //        Global.getDynamicsWorld().stepSimulation(Global.getDeltaInSeconds(), 10, 1f / 90f);
 //        Global.getDynamicsWorld().stepSimulation(Global.getDeltaInSeconds(), 25, 1f / 300f);
         Global.performanceCounter.stop();

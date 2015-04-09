@@ -24,6 +24,7 @@ import com.badlogic.gdx.physics.bullet.dynamics.btDiscreteDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btDynamicsWorld;
 import com.badlogic.gdx.physics.bullet.dynamics.btSequentialImpulseConstraintSolver;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.utils.PerformanceCounter;
 import com.blackboxgaming.engine.Entity;
@@ -34,11 +35,18 @@ import java.util.List;
 
 public class Global {
 
-    public static final boolean showSplashScreen = false;
-    public static final boolean showMenuScreen = false;
-    public static final float splashScreenTime = 4000;
+    public static boolean debugLevelUp = true;
+    public static final boolean showSplashScreen = true;
+    public static final boolean showMenuScreen = true;
+    public static boolean profiling = false;
+    
+    
+    public static boolean renderHealthBar = false;
+    public static final float splashScreenTime = 3000;
     public static boolean START_WITH_ANDROID_GESTURE_LISTENER = false;
     public static Button scoreButton;
+    public static Label LEVEL_LABEL;
+    public static Label HEALTH_LABEL;
     
     // debug
     public static boolean DEBUG_FRUSTRUM_CULLING_SHAPES = false;
@@ -46,16 +54,16 @@ public class Global {
     public static boolean DEBUG_PHYSICS = false;
     public static boolean SHADOW = false;
     public static boolean BOOST = false;
-    
+
     public static Entity mainCharacter;
-    
+
     public static boolean SYNC_KEYBOARD_CAM_ROTATION = false;
-    
+
     // pysics
     public static final List<Integer> PHYSICS_CONTACT_GROUP_WALL = new ArrayList();
     public static final List<Integer> PHYSICS_CONTACT_GROUP_PUPPET = new ArrayList();
     public static final List<Integer> PHYSICS_CONTACT_GROUP_OBSTACLE = new ArrayList();
-    
+
     public static List<Integer> CONTACT_GROUP_GROUND = new ArrayList();
     public static List<Integer> CANTACT_GROUP_PLASMA = new ArrayList();
 
@@ -75,6 +83,7 @@ public class Global {
     public static float gravity = -10;
     private final static float gravity2D = 0;
     public final static float friction = 1f;
+    public static boolean leftMouseCameraMove = false;
 
     // stuff
     public static int VISIBLE_OBJECT_COUNT = 0;
@@ -95,7 +104,7 @@ public class Global {
     public static int glassId;
     public static PerformanceCounter performanceCounter;
     public static boolean loopAmbientSound = false;
-    
+
     public static float rotationSpeed = 180;
     public static float rotationCenter = -7.5f;
     public static float mass = 1;
@@ -107,14 +116,17 @@ public class Global {
     public static float boxLength = 1.6f * 10f;
     public static float boxDepth = 0.6f * 10f;
     public static float tennisBallDiameter = 0.686f;
-    
+
     public static String gameScreen = "game";
-    
+
     private static Vector3 lightDirection = new Vector3(0.5f, -0.75f, -0.25f);
-    
+    public static boolean hideMaxHealth = true;
+    public static long lastPrint;
+    public static Label BRICK_LABEL;
+    public static Image swipeIcon;
+
     public static DirectionalShadowLight getShadowLight() {
         if (shadowLight == null) {
-            
             shadowLight = new DirectionalShadowLight(1024 * 2, 1024 * 2, 50f, 50f, 1f, 100f);
             shadowLight.set(Color.BLACK, lightDirection);
         }
@@ -128,8 +140,9 @@ public class Global {
             environment = new Environment();
             environment.set(new ColorAttribute(ColorAttribute.AmbientLight, ambientLightLevel, ambientLightLevel, ambientLightLevel, 1f));
             environment.add(new DirectionalLight().set(new Color(directionaLightLevel, directionaLightLevel, directionaLightLevel, 1), lightDirection));
-            environment.shadowMap = getShadowLight();
-
+            if (Global.SHADOW) {
+                environment.shadowMap = getShadowLight();
+            }
         }
         return environment;
     }
@@ -166,7 +179,7 @@ public class Global {
         }
         return dynamicsWorld;
     }
-    
+
     public static World getDynamicsWorld2D() {
         if (dynamicsWorld2D == null) {
             dynamicsWorld2D = new World(new Vector2(0, gravity2D), true);

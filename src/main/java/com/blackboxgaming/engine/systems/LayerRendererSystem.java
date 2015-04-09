@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public class LayerRendererSystem implements ISystem, Disposable {
 
-    private final List<Entity> layers = new LinkedList();
+    public final List<Entity> layers = new LinkedList();
 
     @Override
     public void add(Entity entity) {

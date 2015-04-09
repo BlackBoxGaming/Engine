@@ -10,24 +10,34 @@ import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.files.FileHandleStream;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton.ImageTextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.Align;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.blackboxgaming.engine.Engine;
+import com.blackboxgaming.engine.Entity;
 import com.blackboxgaming.engine.components.IComponent;
 import com.blackboxgaming.engine.components.Layer;
 import com.blackboxgaming.engine.input.JoystickController;
 import com.blackboxgaming.engine.input.OrbitCameraListener;
 import com.blackboxgaming.engine.input.PlayerKeyListener;
+import com.blackboxgaming.engine.systems.LayerRendererSystem;
+import com.blackboxgaming.engine.systems.LevelProgressionSystem;
 import com.blackboxgaming.engine.systems.OrbitCameraSystem;
 import com.blackboxgaming.engine.util.Global;
 
@@ -36,6 +46,83 @@ import com.blackboxgaming.engine.util.Global;
  * @author Adrian
  */
 public class LayerFactory {
+
+    public static Layer createLevelAndHealthLayer() {
+        Stage stage = new Stage(new StretchViewport(486, 864));
+        Skin skin = new Skin();
+        Table table = new Table();
+        table.top().pad(10);
+
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("ui/fonts/Century Gothic Bold.ttf"));
+        FreeTypeFontParameter parameter = new FreeTypeFontParameter();
+        parameter.size = 40;
+        parameter.borderColor = Color.BLACK;
+        parameter.borderWidth = 3;
+        BitmapFont font = generator.generateFont(parameter);
+        generator.dispose();
+        Label.LabelStyle labelStyle = new Label.LabelStyle(font, Color.WHITE);
+
+        skin.add("star", new Texture("ui/icons/star.png"));
+        skin.add("shield", new Texture("ui/icons/shield.png"));
+        skin.add("brick", new Texture("ui/icons/brick.png"));
+        skin.add("swipe128", new Texture("ui/icons/swipe128.png"));
+
+        float padding = 10;
+        Image icon = new Image(skin.getDrawable("star"));
+        if (Global.debugLevelUp) {
+            icon.addListener(new ClickListener() {
+                @Override
+                public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+                    if (Engine.systemManager.has(LevelProgressionSystem.class)) {
+                        for (Entity entity : Engine.systemManager.get(LevelProgressionSystem.class).entities) {
+                            Engine.garbageManager.markForDeletion(entity);
+                        }
+                    }
+                    super.touchUp(event, x, y, pointer, button);
+                }
+            });
+        }
+        table.add(icon).pad(padding);
+        Label levelLabel = new Label("", labelStyle);
+        table.add(levelLabel).pad(padding);
+        icon = new Image(skin.getDrawable("shield"));
+        table.add(icon).pad(padding);
+        Label healthLabel = new Label("", labelStyle);
+        table.add(healthLabel).pad(padding);
+        icon = new Image(skin.getDrawable("brick"));
+        table.add(icon).pad(padding);
+        Label brickLabel = new Label("", labelStyle);
+        table.add(brickLabel).pad(padding);
+
+        table.row();
+
+        // swipe
+        if (Engine.systemManager.has(LevelProgressionSystem.class)) {
+            if (Engine.systemManager.get(LevelProgressionSystem.class).level < 5) {
+                icon = new Image(skin.getDrawable("swipe128"));
+                table.add(icon).padTop(350).colspan(6);
+                Global.swipeIcon = icon;
+
+            }
+        }
+
+//        table.setDebug(true);
+        table.setFillParent(true);
+        stage.addActor(table);
+
+        Global.LEVEL_LABEL = levelLabel;
+        Global.HEALTH_LABEL = healthLabel;
+        Global.BRICK_LABEL = brickLabel;
+
+        if (Engine.systemManager.has(LevelProgressionSystem.class)) {
+            Global.LEVEL_LABEL.setText("" + Engine.systemManager.get(LevelProgressionSystem.class).level);
+            Global.HEALTH_LABEL.setText("" + Engine.systemManager.get(LevelProgressionSystem.class).health);
+            Global.BRICK_LABEL.setText("" + Engine.systemManager.get(LevelProgressionSystem.class).nrOfBricks);
+        }
+
+        Engine.inputManager.add(stage);
+        return new Layer("topLayer", stage, table);
+    }
 
     public static Layer createScoreLayer() {
         Stage stage = new Stage();
@@ -154,7 +241,7 @@ public class LayerFactory {
         button.setHeight(150);
         button.setWidth(150);
         button.setName(((ImageTextButton) button).getText().toString());
-        button.addListener(new InputListener(){
+        button.addListener(new InputListener() {
             @Override
             public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
                 Engine.game.setScreen(Engine.screens.get("debug"));
@@ -163,7 +250,7 @@ public class LayerFactory {
         });
         table.add(button).pad(50).padLeft(100).expandX().left();
         table.row();
-        
+
         button = new ImageTextButton("L Boost", style);
         button.setHeight(150);
         button.setWidth(150);
@@ -178,7 +265,7 @@ public class LayerFactory {
         button.addListener(new Rotate(false, true, true));
         table.add(button).pad(50).padRight(100).bottom().right();
         table.row();
-        
+
         button = new ImageTextButton("Left", style);
         button.setHeight(150);
         button.setWidth(150);
@@ -192,7 +279,6 @@ public class LayerFactory {
         button.setName(((ImageTextButton) button).getText().toString());
         button.addListener(new Rotate(false, true, false));
         table.add(button).pad(50).padRight(100).bottom().right();
-
 
 //        table.setDebug(true);
         table.setFillParent(true);
@@ -242,7 +328,7 @@ class Rotate extends InputListener {
 
     @Override
     public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-        if(boost){
+        if (boost) {
             input.keyDown(Keys.SHIFT_LEFT);
         }
         if (left) {
@@ -254,7 +340,7 @@ class Rotate extends InputListener {
     }
 
     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
-        if(boost){
+        if (boost) {
             input.keyUp(Keys.SHIFT_LEFT);
         }
         if (left) {

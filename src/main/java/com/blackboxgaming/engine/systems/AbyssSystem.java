@@ -2,6 +2,7 @@ package com.blackboxgaming.engine.systems;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageTextButton;
@@ -24,16 +25,9 @@ import java.util.List;
 public class AbyssSystem implements ISystem, Disposable {
 
     private final List<Entity> entities = new ArrayList();
-    private float abyss = -50f;
+    private final float abyss = -1f;
     private final Vector3 v = new Vector3();
-    private final OnDeath onDeath;
-    private boolean killed = false;
-    private final Sound destroySound;
-
-    public AbyssSystem(OnDeath onDeath) {
-        this.onDeath = onDeath;
-        destroySound = Gdx.audio.newSound(Gdx.files.internal(AssetManager.pathToSounds + "buzz.mp3"));
-    }
+    private final Vector3 position = new Vector3();
 
     @Override
     public void add(Entity entity) {
@@ -50,21 +44,11 @@ public class AbyssSystem implements ISystem, Disposable {
     @Override
     public void update(float delta) {
         for (Entity entity : entities) {
-            if (entity.get(Transform.class).transform.getTranslation(v).y < abyss) {
+            position.set(entity.get(Transform.class).transform.getTranslation(v));
+            if (position.y < abyss || Math.abs(position.x) > Global.boxLength / 2f || Math.abs(position.z) > Global.boxWidth / 2f) {
                 System.out.println(entity + " destroyed by abyss");
                 Engine.garbageManager.markForDeletion(entity);
-                killed = true;
-                ((ImageTextButton) Global.scoreButton).setText("" + 0);
-                destroySound.play();
-                Global.touchLeft = false;
-                Global.touchRight = false;
             }
-        }
-        if (killed) {
-            if (onDeath != null) {
-                onDeath.onDeath();
-            }
-            killed = false;
         }
     }
 
@@ -72,7 +56,6 @@ public class AbyssSystem implements ISystem, Disposable {
     public void dispose() {
         System.out.println("Disposing " + this.getClass());
         entities.clear();
-        destroySound.dispose();
     }
 
 }

@@ -3,6 +3,7 @@ package com.blackboxgaming.engine.input;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.utils.CameraInputController;
 import com.badlogic.gdx.math.Vector3;
+import com.blackboxgaming.engine.util.Global;
 
 public class OrbitCameraListener extends CameraInputController {
 
@@ -13,7 +14,7 @@ public class OrbitCameraListener extends CameraInputController {
     @Override
     protected boolean process(float deltaX, float deltaY, int button) {
         Vector3 tmp = new Vector3();
-        if (button == PlayerKeyListener.clickLeftButton || button == PlayerKeyListener.clickRightButton || button == PlayerKeyListener.clickMiddleButton) {
+        if ((Global.leftMouseCameraMove && button == PlayerKeyListener.clickLeftButton) || button == PlayerKeyListener.clickRightButton || button == PlayerKeyListener.clickMiddleButton) {
             tmp.set(camera.direction).crs(camera.up).y = 0f;
             camera.rotateAround(target, tmp.nor(), deltaY * rotateAngle);
             camera.rotateAround(target, Vector3.Y, deltaX * -rotateAngle);

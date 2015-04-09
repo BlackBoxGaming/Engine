@@ -20,8 +20,8 @@ public class DebugSystem implements ISystem {
 
     private List<Entity> entityList = new ArrayList();
 
-    public Stage stage = new Stage();
-    protected BitmapFont font = new BitmapFont();
+    public Stage stage;
+    protected BitmapFont font;
     protected StringBuilder stringBuilder = new StringBuilder();
 
     @Override
@@ -29,9 +29,13 @@ public class DebugSystem implements ISystem {
     }
     public DebugSystem() {
         this(true);
+        this.font = new BitmapFont();
+        this.stage = new Stage();
     }
 
     public DebugSystem(boolean work) {
+        this.font = new BitmapFont();
+        this.stage = new Stage();
         this.work = work;
     }
 
